@@ -1,8 +1,13 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SubmitField, FloatField
+from wtforms import (
+    StringField, SelectField, SubmitField, FloatField,
+    PasswordField, IntegerField
+)
 from wtforms_sqlalchemy.fields import QuerySelectField
-from wtforms.validators import DataRequired, Length, URL
-from grocery_app.models import GroceryStore, ItemCategory
+from wtforms.validators import (
+    DataRequired, Length, URL, NumberRange, ValidationError
+)
+from grocery_app.models import GroceryStore, GroceryItem, ItemCategory, User
 
 
 class GroceryStoreForm(FlaskForm):
@@ -36,3 +41,59 @@ class GroceryItemForm(FlaskForm):
         allow_blank=False
     )
     submit = SubmitField('Submit')
+
+
+class ShoppingListForm(FlaskForm):
+    """Form for adding/updating a ShoppingList."""
+    name = StringField(
+        'Name',
+        validators=[DataRequired(), Length(min=1, max=80)]
+    )
+    submit = SubmitField('Submit')
+
+
+class ShoppingListItemForm(FlaskForm):
+    """Form for adding/updating a ShoppingListItem."""
+    item = QuerySelectField(
+        'Item',
+        query_factory=lambda: GroceryItem.query,
+        allow_blank=False
+    )
+    quantity = IntegerField(
+        'Quantity',
+        validators=[DataRequired(), NumberRange(min=1)]
+    )
+    submit = SubmitField('Submit')
+
+
+class SignUpForm(FlaskForm):
+    """Form for adding users."""
+    username = StringField(
+        'Username',
+        validators=[DataRequired(), Length(min=3, max=80)]
+    )
+    password = PasswordField(
+        'Password',
+        validators=[DataRequired(), Length(min=6)]
+    )
+    submit = SubmitField('Sign Up')
+
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError(
+                'Username already taken. Please pick another.'
+            )
+
+
+class LoginForm(FlaskForm):
+    """Form for logging in."""
+    username = StringField(
+        'Username',
+        validators=[DataRequired()]
+    )
+    password = PasswordField(
+        'Password',
+        validators=[DataRequired()]
+    )
+    submit = SubmitField('Log In')
