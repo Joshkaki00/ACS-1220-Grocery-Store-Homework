@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>New Store</h1>
+
+<form method="POST">
+    <fieldset>
+        <legend>Please enter your information:</legend>
+
+        {{ form.csrf_token }}
+        {{ form.title.label }}
+        {{ form.title }}
+        <ul>
+        {% for error in form.title.errors %}
+            <li class="error">{{ error }}</li>
+        {% endfor %}
+        </ul>
+
+        {{ form.address.label }}
+        {{ form.address }}
+        <ul>
+        {% for error in form.address.errors %}
+            <li class="error">{{ error }}</li>
+        {% endfor %}
+        </ul>
+
+        {{ form.submit }}
+    </fieldset>
+</form>
+
+{% endblock %}
