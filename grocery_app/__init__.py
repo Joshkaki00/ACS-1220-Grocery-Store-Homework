@@ -1,6 +1,7 @@
 from flask import Flask
 from grocery_app.extensions import db, bcrypt, login_manager
 
+__all__ = ['db', 'bcrypt', 'login_manager']
 
 def create_app():
     app = Flask(__name__)
@@ -21,6 +22,14 @@ def create_app():
 
     # Create database tables
     with app.app_context():
-        db.create_all()
+        # Create a test store if none exists
+        from grocery_app.models import GroceryStore
+        if not GroceryStore.query.first():
+            test_store = GroceryStore(
+                title='Test Store',
+                address='123 Test St'
+            )
+            db.session.add(test_store)
+            db.session.commit()
 
     return app 

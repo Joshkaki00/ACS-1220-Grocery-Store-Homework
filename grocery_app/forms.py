@@ -1,11 +1,11 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField, SelectField, SubmitField, FloatField,
-    PasswordField, IntegerField
+    PasswordField, IntegerField, URLField
 )
 from wtforms_sqlalchemy.fields import QuerySelectField
 from wtforms.validators import (
-    DataRequired, Length, URL, NumberRange, ValidationError
+    DataRequired, Length, URL, NumberRange, ValidationError, Optional, EqualTo
 )
 from grocery_app.models import GroceryStore, GroceryItem, ItemCategory, User
 
@@ -29,12 +29,21 @@ class GroceryItemForm(FlaskForm):
         'Name',
         validators=[DataRequired(), Length(min=1, max=80)]
     )
-    price = FloatField('Price', validators=[DataRequired()])
+    price = FloatField(
+        'Price',
+        validators=[
+            DataRequired(),
+            NumberRange(min=0, message='Price must be greater than 0')
+        ]
+    )
     category = SelectField(
         'Category',
         choices=[(category.value, category.value) for category in ItemCategory]
     )
-    photo_url = StringField('Photo URL', validators=[URL()])
+    photo_url = URLField(
+        'Photo URL',
+        validators=[Optional(), URL()]
+    )
     store = QuerySelectField(
         'Store',
         query_factory=lambda: GroceryStore.query,
@@ -61,7 +70,10 @@ class ShoppingListItemForm(FlaskForm):
     )
     quantity = IntegerField(
         'Quantity',
-        validators=[DataRequired(), NumberRange(min=1)]
+        validators=[
+            DataRequired(),
+            NumberRange(min=1, message='Quantity must be at least 1')
+        ]
     )
     submit = SubmitField('Submit')
 
@@ -75,6 +87,13 @@ class SignUpForm(FlaskForm):
     password = PasswordField(
         'Password',
         validators=[DataRequired(), Length(min=6)]
+    )
+    confirm_password = PasswordField(
+        'Confirm Password',
+        validators=[
+            DataRequired(),
+            EqualTo('password', message='Passwords must match')
+        ]
     )
     submit = SubmitField('Sign Up')
 

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from grocery_app.models import (
-    GroceryStore, GroceryItem, ShoppingList, ShoppingListItem, User
+    GroceryStore, GroceryItem, ShoppingList, User, shopping_list_items
 )
 from grocery_app.forms import (
     GroceryStoreForm, GroceryItemForm, ShoppingListForm,
@@ -101,7 +101,9 @@ def shopping_list():
         db.session.add(new_list)
         db.session.commit()
         flash('Shopping list was created successfully.')
-        return redirect(url_for('main.shopping_list_detail', list_id=new_list.id))
+        return redirect(
+            url_for('main.shopping_list_detail', list_id=new_list.id)
+        )
 
     lists = ShoppingList.query.filter_by(user_id=current_user.id).all()
     return render_template('shopping_list.html', lists=lists, form=form)
@@ -117,12 +119,13 @@ def shopping_list_detail(list_id):
     form = ShoppingListItemForm()
 
     if form.validate_on_submit():
-        item = ShoppingListItem(
+        # Add item to shopping list with quantity
+        stmt = shopping_list_items.insert().values(
             shopping_list_id=shopping_list.id,
             item_id=form.item.data.id,
             quantity=form.quantity.data
         )
-        db.session.add(item)
+        db.session.execute(stmt)
         db.session.commit()
         flash('Item was added to shopping list successfully.')
         return redirect(url_for('main.shopping_list_detail', list_id=list_id))
@@ -141,12 +144,12 @@ def delete_shopping_list_item(list_id, item_id):
         flash('You do not have permission to modify this shopping list.')
         return redirect(url_for('main.shopping_list'))
 
-    item = ShoppingListItem.query.get_or_404(item_id)
-    if item.shopping_list_id != shopping_list.id:
-        flash('Item does not belong to this shopping list.')
-        return redirect(url_for('main.shopping_list'))
-
-    db.session.delete(item)
+    # Delete item from shopping list
+    stmt = shopping_list_items.delete().where(
+        shopping_list_items.c.shopping_list_id == shopping_list.id,
+        shopping_list_items.c.item_id == item_id
+    )
+    db.session.execute(stmt)
     db.session.commit()
     flash('Item was removed from shopping list successfully.')
     return redirect(url_for('main.shopping_list_detail', list_id=list_id))
